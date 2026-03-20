@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GENx — A Cosmic Journey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --cosmic-dark: #0a0612;
+            --cosmic-purple: #1a0a2e;
+            --nebula-pink: #ff6b9d;
+            --nebula-blue: #4ecdc4;
+            --star-gold: #ffd93d;
+            --spotify-green: #1db954;
+            --instagram-gradient: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            --youtube-red: #ff0000;
+            --genx-cyan: #00f5d4;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--cosmic-dark);
+            cursor: crosshair;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .scroll-hint {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            z-index: 20;
+            animation: pulse 2s ease-in-out infinite;
+            transition: opacity 0.8s ease;
+        }
+
+        .scroll-hint.hidden {
+            opacity: 0;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+            50% { opacity: 0.8; transform: translateX(-50%) translateY(-5px); }
+        }
+
+        .platform-label {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 1s ease, transform 1s ease;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .platform-label.visible {
+            opacity: 1;
+        }
+
+        .platform-label h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2rem, 8vw, 6rem);
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 60px rgba(255,255,255,0.3);
+        }
+
+        .platform-label p {
+            font-size: clamp(0.9rem, 2vw, 1.3rem);
+            color: rgba(255, 255, 255, 0.6);
+            max-width: 500px;
+            line-height: 1.8;
+        }
+
+        .genx-final {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .genx-final.visible {
+            opacity: 1;
+        }
+
+        .genx-final h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(4rem, 15vw, 12rem);
+            font-weight: 800;
+            letter-spacing: -4px;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #00f5d4 0%, #7b61ff 50%, #ff6b9d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease-in-out infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .genx-final .tagline {
+            font-size: clamp(1rem, 3vw, 1.8rem);
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 40px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .genx-final .description {
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            color: rgba(255, 255, 255, 0.5);
+            max-width: 600px;
+            line-height: 2;
+            margin: 0 auto;
+        }
+
+        .progress-bar {
+            position: fixed;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            z-index: 20;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(to bottom, #00f5d4, #7b61ff, #ff6b9d);
+            border-radius: 10px;
+            transition: height 0.3s ease;
+        }
+
+        .progress-markers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .marker {
+            position: absolute;
+            left: -8px;
+            width: 19px;
+            height: 19px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%);
+            transition: all 0.5s ease;
+        }
+
+        .marker.active {
+            background: #00f5d4;
+            border-color: #00f5d4;
+            box-shadow: 0 0 20px rgba(0, 245, 212, 0.5);
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(10, 6, 18, 0.4) 70%, rgba(10, 6, 18, 0.8) 100%);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="vignette"></div>
+    
+    <div id="ui-layer">
+        <div class="scroll-hint" id="scrollHint">Scroll to journey</div>
+        
+        <div class="platform-label" id="spotifyLabel">
+            <h2>Spotify</h2>
+            <p>Where sound becomes atmosphere. Millions of songs floating in the cosmic void, waiting to be discovered.</p>
+        </div>
+        
+        <div class="platform-label" id="instagramLabel">
+            <h2>Instagram</h2>
+            <p>Visual stories woven into stardust. Moments captured, memories eternalized in the digital constellation.</p>
+        </div>
+        
+        <div class="platform-label" id="youtubeLabel">
+            <h2>YouTube</h2>
+            <p>A universe of moving pictures. Knowledge, entertainment, and creativity streaming through infinite channels.</p>
+        </div>
+        
+        <div class="genx-final" id="genxFinal">
+            <h1>GENx</h1>
+            <div class="tagline">The Future Awaits</div>
+            <p class="description">A next-generation intelligent experience built for the future of creation, discovery, and interaction. This is not just a destination — it's the beginning of a new digital era.</p>
+        </div>
+    </div>
+    
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+        <div class="progress-markers">
+            <div class="marker active" style="top: 0%"></div>
+            <div class="marker" style="top: 25%"></div>
+            <div class="marker" style="top: 50%"></div>
+            <div class="marker" style="top: 75%"></div>
+            <div class="marker" style="top: 100%"></div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // Scene setup
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
+        
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            alpha: true,
+            powerPreference: "high-performance"
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        container.appendChild(renderer.domElement);
+
+        // Post-processing
+        const composer = new EffectComposer(renderer);
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
+        
+        const bloomPass = new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            1.5, 0.4, 0.85
+        );
+        bloomPass.threshold = 0.1;
+        bloomPass.strength = 2;
+        bloomPass.radius = 1;
+        composer.addPass(bloomPass);
+
+        // Journey state
+        const journeyState = {
+            progress: 0,
+            targetProgress: 0,
+            scrollVelocity: 0,
+            mousePos: { x: 0, y: 0 },
+            targetMousePos: { x: 0, y: 0 },
+            section: 0,
+            totalSections: 5
+        };
+
+        // Section positions
+        const sectionPositions = [0, 200, 400, 600, 800];
+
+        // Create stars
+        function createStars() {
+            const starCount = 3000;
+            const positions = new Float32Array(starCount * 3);
+            const colors = new Float32Array(starCount * 3);
+            const sizes = new Float32Array(starCount);
+            
+            const warmColors = [
+                new THREE.Color('#fff5e6'),
+                new THREE.Color('#ffe4c4'),
+                new THREE.Color('#ffd699'),
+                new THREE.Color('#e6d5ff'),
+                new THREE.Color('#d4f1f4')
+            ];
+
+            for (let i = 0; i < starCount; i++) {
+                const i3 = i * 3;
+                
+                // Spread stars across the journey
+                positions[i3] = (Math.random() - 0.5) * 400;
+                positions[i3 + 1] = (Math.random() - 0.5) * 400;
+                positions[i3 + 2] = Math.random() * -1000;
+                
+                const color = warmColors[Math.floor(Math.random() * warmColors.length)];
+                colors[i3] = color.r;
+                colors[i3 + 1] = color.g;
+                colors[i3 + 2] = color.b;
+                
+                sizes[i] = Math.random() * 3 + 0.5;
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0 },
+                    uPixelRatio: { value: renderer.getPixelRatio() }
+                },
+                vertexShader: `
+                    attribute float size;
+                    varying vec3 vColor;
+                    uniform float uTime;
+                    uniform float uPixelRatio;
+                    
+                    void main() {
+                        vColor = color;
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        float twinkle = sin(uTime * 2.0 + position.x * 0.1 + position.y * 0.1) * 0.3 + 0.7;
+                        gl_PointSize = size * uPixelRatio * (200.0 / -mvPosition.z) * twinkle;
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vColor;
+                    
+                    void main() {
+                        float dist = length(gl_PointCoord - vec2(0.5));
+                        if (dist > 0.5) discard;
+                        
+                        float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+                        float glow = exp(-dist * 4.0);
+                        
+                        vec3 finalColor = vColor + vec3(glow * 0.3);
+                        gl_FragColor = vec4(finalColor, alpha * 0.9);
+                    }
+                `,
+                transparent: true,
+                vertexColors: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            return new THREE.Points(geometry, material);
+        }
+
+        // Create nebula clouds
+        function createNebula() {
+            const nebulaGroup = new THREE.Group();
+            
+            const nebulaColors = [
+                { color: '#1a0a2e', opacity: 0.6 },
+                { color: '#2d1b4e', opacity: 0.4 },
+                { color: '#0f1a3d', opacity: 0.5 },
+                { color: '#1e0a3c', opacity: 0.3 }
+            ];
+
+            for (let i = 0; i < 12; i++) {
+                const geometry = new THREE.PlaneGeometry(300, 300);
+                const colorData = nebulaColors[i % nebulaColors.length];
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uTime: { value: 0 },
+                        uColor: { value: new THREE.Color(colorData.color) },
+                        uOpacity: { value: colorData.opacity }
+                    },
+                    vertexShader: `
+                        varying vec2 vUv;
+                        uniform float uTime;
+                        
+                        void main() {
+                            vUv = uv;
+                            vec3 pos = position;
+                            pos.z += sin(uTime * 0.1 + position.x * 0.01) * 5.0;
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec2 vUv;
+                        uniform vec3 uColor;
+                        uniform float uOpacity;
+                        uniform float uTime;
+                        
+                        float noise(vec2 p) {
+                            return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+                        }
+                        
+                        void main() {
+                            vec2 center = vUv - 0.5;
+                            float dist = length(center);
+                            
+                            float n = noise(vUv * 10.0 + uTime * 0.05);
+                            float alpha = smoothstep(0.5, 0.0, dist) * uOpacity * (0.5 + n * 0.5);
+                            
+                            gl_FragColor = vec4(uColor, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(
+                    (Math.random() - 0.5) * 200,
+                    (Math.random() - 0.5) * 200,
+                    -100 - i * 80
+                );
+                mesh.rotation.z = Math.random() * Math.PI;
+                nebulaGroup.add(mesh);
+            }
+
+            return nebulaGroup;
+        }
+
+        // Create floating particles
+        function createParticles() {
+            const particleCount = 500;
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+            
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                positions[i3] = (Math.random() - 0.5) * 100;
+                positions[i3 + 1] = (Math.random() - 0.5) * 100;
+                positions[i3 + 2] = Math.random() * -500;
+                
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: (Math.random() - 0.5) * 0.02,
+                    z: Math.random() * 0.05 + 0.01
+                });
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 2,
+                color: '#ffffff',
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const points = new THREE.Points(geometry, material);
+            points.userData.velocities = velocities;
+            
+            return points;
+        }
+
+        // Create platform portal
+        function createPlatformPortal(color1, color2, zPosition, name) {
+            const portalGroup = new THREE.Group();
+            
+            // Outer ring
+            const ringGeometry = new THREE.TorusGeometry(15, 0.5, 16, 100);
+            const ringMaterial = new THREE.MeshBasicMaterial({
+                color: color1,
+                transparent: true,
+                opacity: 0.8
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            portalGroup.add(ring);
+
+            // Inner glow
+            const glowGeometry = new THREE.CircleGeometry(12, 64);
+            const glowMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0 },
+                    uColor1: { value: new THREE.Color(color1) },
+                    uColor2: { value: new THREE.Color(color2) }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec2 vUv;
+                    uniform float uTime;
+                    uniform vec3 uColor1;
+                    uniform vec3 uColor2;
+                    
+                    void main() {
+                        vec2 center = vUv - 0.5;
+                        float dist = length(center);
+                        
+                        float pulse = sin(uTime * 2.0) * 0.1 + 0.9;
+                        float alpha = smoothstep(0.5, 0.0, dist) * pulse * 0.8;
+                        
+                        vec3 color = mix(uColor1, uColor2, dist * 2.0);
+                        
+                        float ring = smoothstep(0.35, 0.4, dist) * smoothstep(0.45, 0.4, dist);
+                        alpha += ring * 0.5;
+                        
+                        gl_FragColor = vec4(color, alpha);
+                    }
+                `,
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.z = 0.1;
+            portalGroup.add(glow);
+
+            // Particle orbit
+            const orbitParticles = createOrbitParticles(color1, 20);
+            portalGroup.add(orbitParticles);
+
+            portalGroup.position.z = -zPosition;
+            portalGroup.userData.name = name;
+            portalGroup.userData.baseZ = -zPosition;
+
+            return portalGroup;
+        }
+
+        // Create orbiting particles around portals
+        function createOrbitParticles(color, count) {
+            const positions = new Float32Array(count * 3);
+            const angles = [];
+            
+            for (let i = 0; i < count; i++) {
+                angles.push({
+                    angle: (i / count) * Math.PI * 2,
+                    radius: 18 + Math.random() * 4,
+                    speed: 0.5 + Math.random() * 0.5,
+                    yOffset: (Math.random() - 0.5) * 5
+                });
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 3,
+                color: color,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const points = new THREE.Points(geometry, material);
+            points.userData.angles = angles;
+            
+            return points;
+        }
+
+        // Create GENx finale
+        function createGenxFinale(zPosition) {
+            const genxGroup = new THREE.Group();
+            
+            // Central core
+            const coreGeometry = new THREE.IcosahedronGeometry(8, 2);
+            const coreMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0 }
+                },
+                vertexShader: `
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    uniform float uTime;
+                    
+                    void main() {
+                        vNormal = normal;
+                        vPosition = position;
+                        
+                        vec3 pos = position;
+                        pos += normal * sin(uTime * 2.0 + position.y * 2.0) * 0.3;
+                        
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vNormal;
+                    varying vec3 vPosition;
+                    uniform float uTime;
+                    
+                    void main() {
+                        vec3 color1 = vec3(0.0, 0.96, 0.83);
+                        vec3 color2 = vec3(0.48, 0.38, 1.0);
+                        vec3 color3 = vec3(1.0, 0.42, 0.62);
+                        
+                        float mixFactor = sin(uTime + vPosition.y) * 0.5 + 0.5;
+                        vec3 color = mix(mix(color1, color2, mixFactor), color3, sin(uTime * 0.5) * 0.5 + 0.5);
+                        
+                        float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.0);
+                        color += fresnel * 0.5;
+                        
+                        gl_FragColor = vec4(color, 0.9);
+                    }
+                `,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+            const core = new THREE.Mesh(coreGeometry, coreMaterial);
+            genxGroup.add(core);
+
+            // Energy rings
+            for (let i = 0; i < 3; i++) {
+                const ringGeometry = new THREE.TorusGeometry(12 + i * 4, 0.2, 16, 100);
+                const ringMaterial = new THREE.MeshBasicMaterial({
+                    color: i === 0 ? '#00f5d4' : i === 1 ? '#7b61ff' : '#ff6b9d',
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.x = Math.PI / 2 + i * 0.3;
+                ring.rotation.y = i * 0.5;
+                ring.userData.rotationSpeed = 0.5 + i * 0.2;
+                ring.userData.axis = i % 2 === 0 ? 'x' : 'y';
+                genxGroup.add(ring);
+            }
+
+            genxGroup.position.z = -zPosition;
+            genxGroup.userData.baseZ = -zPosition;
+
+            return genxGroup;
+        }
+
+        // Initialize scene elements
+        const stars = createStars();
+        scene.add(stars);
+
+        const nebula = createNebula();
+        scene.add(nebula);
+
+        const particles = createParticles();
+        scene.add(particles);
+
+        // Create platforms
+        const spotifyPortal = createPlatformPortal('#1db954', '#1ed760', 250, 'spotify');
+        scene.add(spotifyPortal);
+
+        const instagramPortal = createPlatformPortal('#c13584', '#fd1d1d', 450, 'instagram');
+        scene.add(instagramPortal);
+
+        const youtubePortal = createPlatformPortal('#ff0000', '#cc0000', 650, 'youtube');
+        scene.add(youtubePortal);
+
+        const genxFinale = createGenxFinale(850);
+        scene.add(genxFinale);
+
+        // Set initial camera position
+        camera.position.set(0, 0, 50);
+
+        // Event listeners
+        let scrollTimeout = null;
+        
+        window.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            
+            journeyState.scrollVelocity += e.deltaY * 0.001;
+            journeyState.targetProgress = Math.max(0, Math.min(1, journeyState.targetProgress + e.deltaY * 0.0002));
+            
+            document.getElementById('scrollHint').classList.add('hidden');
+            
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                snapToSection();
+            }, 150);
+        }, { passive: false });
+
+        function snapToSection() {
+            const sectionSize = 1 / (journeyState.totalSections - 1);
+            const currentSection = Math.round(journeyState.targetProgress / sectionSize);
+            journeyState.targetProgress = currentSection * sectionSize;
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            journeyState.targetMousePos.x = (e.clientX / window.innerWidth - 0.5) * 2;
+            journeyState.targetMousePos.y = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Touch support
+        let touchStartY = 0;
+        
+        window.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const deltaY = touchStartY - e.touches[0].clientY;
+            journeyState.targetProgress = Math.max(0, Math.min(1, journeyState.targetProgress + deltaY * 0.001));
+            touchStartY = e.touches[0].clientY;
+            
+            document.getElementById('scrollHint').classList.add('hidden');
+        }, { passive: false });
+
+        // Update UI
+        function updateUI() {
+            const progress = journeyState.progress;
+            const sectionSize = 1 / (journeyState.totalSections - 1);
+            const currentSection = Math.round(progress / sectionSize);
+            
+            // Update progress bar
+            document.getElementById('progressFill').style.height = `${progress * 100}%`;
+            
+            // Update markers
+            document.querySelectorAll('.marker').forEach((marker, index) => {
+                const markerThreshold = index / (journeyState.totalSections - 1);
+                marker.classList.toggle('active', progress >= markerThreshold - 0.05);
+            });
+
+            // Update platform labels
+            const labels = ['spotifyLabel', 'instagramLabel', 'youtubeLabel'];
+            const thresholds = [0.25, 0.5, 0.75];
+            
+            labels.forEach((labelId, index) => {
+                const label = document.getElementById(labelId);
+                const inRange = progress > thresholds[index] - 0.1 && progress < thresholds[index] + 0.15;
+                label.classList.toggle('visible', inRange);
+            });
+
+            // GENx finale
+            const genxFinal = document.getElementById('genxFinal');
+            genxFinal.classList.toggle('visible', progress > 0.85);
+        }
+
+        // Animation loop
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = clock.getElapsedTime();
+            const delta = clock.getDelta();
+            
+            // Smooth progress
+            journeyState.progress += (journeyState.targetProgress - journeyState.progress) * 0.05;
+            
+            // Smooth mouse following
+            journeyState.mousePos.x += (journeyState.targetMousePos.x - journeyState.mousePos.x) * 0.05;
+            journeyState.mousePos.y += (journeyState.targetMousePos.y - journeyState.mousePos.y) * 0.05;
+            
+            // Camera position based on progress
+            const cameraZ = 50 - journeyState.progress * 850;
+            camera.position.x = journeyState.mousePos.x * 10;
+            camera.position.y = -journeyState.mousePos.y * 8;
+            camera.position.z += (cameraZ - camera.position.z) * 0.05;
+            
+            // Update star shader
+            stars.material.uniforms.uTime.value = time;
+            
+            // Update nebula
+            nebula.children.forEach((mesh, i) => {
+                mesh.material.uniforms.uTime.value = time;
+                mesh.position.x += Math.sin(time * 0.1 + i) * 0.02;
+                mesh.position.y += Math.cos(time * 0.15 + i) * 0.01;
+            });
+            
+            // Update particles
+            const particlePositions = particles.geometry.attributes.position.array;
+            const velocities = particles.userData.velocities;
+            
+            for (let i = 0; i < velocities.length; i++) {
+                const i3 = i * 3;
+                particlePositions[i3] += velocities[i].x;
+                particlePositions[i3 + 1] += velocities[i].y;
+                particlePositions[i3 + 2] += velocities[i].z;
+                
+                if (particlePositions[i3 + 2] > 50) {
+                    particlePositions[i3 + 2] = -500;
+                }
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+            
+            // Update portals
+            const portals = [spotifyPortal, instagramPortal, youtubePortal];
+            portals.forEach(portal => {
+                portal.rotation.z += 0.005;
+                portal.children[1].material.uniforms.uTime.value = time;
+                
+                // Update orbit particles
+                const orbitParticles = portal.children[2];
+                const orbitPositions = orbitParticles.geometry.attributes.position.array;
+                const angles = orbitParticles.userData.angles;
+                
+                angles.forEach((angle, i) => {
+                    angle.angle += 0.02 * angle.speed;
+                    const i3 = i * 3;
+                    orbitPositions[i3] = Math.cos(angle.angle) * angle.radius;
+                    orbitPositions[i3 + 1] = Math.sin(angle.angle) * angle.radius + angle.yOffset;
+                    orbitPositions[i3 + 2] = 0;
+                });
+                orbitParticles.geometry.attributes.position.needsUpdate = true;
+            });
+            
+            // Update GENx finale
+            genxFinale.children[0].material.uniforms.uTime.value = time;
+            genxFinale.rotation.y += 0.01;
+            
+            genxFinale.children.forEach((child, i) => {
+                if (i > 0) {
+                    child.rotation[child.userData.axis || 'x'] += child.userData.rotationSpeed * 0.01;
+                }
+            });
+            
+            // Update UI
+            updateUI();
+            
+            // Render
+            composer.render();
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
